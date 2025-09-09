@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Space Invaders Game</title>
+  <style>
+    body { margin: 0; background: black; overflow: hidden; }
+    canvas { display: block; margin: auto; background: black; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Player
+    let player = { x: 280, y: 360, w: 40, h: 20, speed: 5 };
+    let bullets = [];
+    let enemies = [];
+    let enemyBullets = [];
+
+    // Controls
+    let keys = {};
+    document.addEventListener("keydown", e => keys[e.key] = true);
+    document.addEventListener("keyup", e => keys[e.key] = false);
+
+    // Shoot bullet
+    function shoot() {
+      bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 10 });
+    }
+
+    // Create enemies
+    function createEnemies() {
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 3; j++) {
+          enemies.push({ x: 60 + i*100, y: 30 + j*40, w: 30, h: 20 });
+        }
+      }
+    }
+    createEnemies();
+
+    // Update game
+    function update() {
+      // Move player
+      if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
+      if (keys["ArrowRight"] && player.x < canvas.width - player.w) player.x += player.speed;
+      if (keys[" "] && bullets.length < 5) shoot();
+
+      // Move bullets
+      bullets.forEach(b => b.y -= 5);
+      bullets = bullets.filter(b => b.y > 0);
+
+      // Enemy bullets
+      if (Math.random() < 0.02 && enemies.length > 0) {
+        let e = enemies[Math.floor(Math.random() * enemies.length)];
+        enemyBullets.push({ x: e.x + e.w/2, y: e.y, w: 4, h: 10 });
+      }
+      enemyBullets.forEach(b => b.y += 4);
+      enemyBullets = enemyBullets.filter(b => b.y < canvas.height);
+
+      // Collision detection
+      bullets.forEach((b, bi) => {
+        enemies.forEach((e, ei) => {
+          if (b.x < e.x+e.w && b.x+b.w > e.x && b.y < e.y+e.h && b.y+b.h > e.y) {
+            enemies.splice(ei,1);
+            bullets.splice(bi,1);
+          }
+        });
+      });
+
+      enemyBullets.forEach((b) => {
+        if (b.x < player.x+player.w && b.x+b.w > player.x && b.y < player.y+player.h && b.y+b.h > player.y) {
+          alert("Game Over!");
+          document.location.reload();
+        }
+      });
+    }
+
+    // Draw everything
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Player
+      ctx.fillStyle = "lime";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      // Bullets
+      ctx.fillStyle = "yellow";
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+      // Enemies
+      ctx.fillStyle = "red";
+      enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
+
+      // Enemy Bullets
+      ctx.fillStyle = "white";
+      enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+  </script>
+</body>
+</html>
